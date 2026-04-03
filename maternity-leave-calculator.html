@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>産前産後・育児休業 期間計算アプリ</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic Pro', sans-serif;
+      background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 25%, #e8f5e9 50%, #e3f2fd 75%, #fce4ec 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ===== 浮かぶデコ ===== */
+    .floating-decor { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden; z-index:0; }
+    .deco-item { position:absolute; animation:floatDeco ease-in-out infinite; font-size:1.8rem; opacity:0.55; }
+    .deco-item:nth-child(1)  { top:5%;  left:4%;   font-size:2.2rem; animation-duration:7s;  animation-delay:0s;   }
+    .deco-item:nth-child(2)  { top:12%; left:90%;  font-size:1.6rem; animation-duration:9s;  animation-delay:1s;   }
+    .deco-item:nth-child(3)  { top:28%; left:7%;   font-size:1.4rem; animation-duration:8s;  animation-delay:2s;   }
+    .deco-item:nth-child(4)  { top:38%; left:93%;  font-size:2rem;   animation-duration:6s;  animation-delay:0.5s; }
+    .deco-item:nth-child(5)  { top:55%; left:2%;   font-size:1.8rem; animation-duration:10s; animation-delay:3s;   }
+    .deco-item:nth-child(6)  { top:62%; left:88%;  font-size:1.5rem; animation-duration:7.5s;animation-delay:1.5s; }
+    .deco-item:nth-child(7)  { top:75%; left:10%;  font-size:1.3rem; animation-duration:8.5s;animation-delay:4s;   }
+    .deco-item:nth-child(8)  { top:80%; left:82%;  font-size:2rem;   animation-duration:6.5s;animation-delay:2.5s; }
+    .deco-item:nth-child(9)  { top:90%; left:45%;  font-size:1.6rem; animation-duration:9.5s;animation-delay:0.8s; }
+    .deco-item:nth-child(10) { top:20%; left:48%;  font-size:1.2rem; animation-duration:11s; animation-delay:5s;   }
+    @keyframes floatDeco {
+      0%,100% { transform: translateY(0px) rotate(0deg)   scale(1);   }
+      33%      { transform: translateY(-18px) rotate(8deg) scale(1.08); }
+      66%      { transform: translateY(-8px) rotate(-5deg) scale(0.95); }
+    }
+
+    .wrapper { position:relative; z-index:1; max-width:700px; margin:0 auto; }
+
+    /* ===== ヘッダータイトルバナー ===== */
+    .header { text-align:center; margin-bottom:28px; }
+    .header-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #fff0f5, #fce4ec, #f3e5f5);
+      border: 2.5px solid #f48fb1;
+      border-radius: 999px;
+      padding: 12px 28px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 18px rgba(233,30,140,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .banner-emoji { font-size: 1.8rem; animation: bannerBounce 2s ease-in-out infinite; }
+    .banner-emoji:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bannerBounce {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
+    }
+
+    .header h1 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #e91e8c;
+      text-shadow: 1px 1px 0px rgba(233,30,140,0.12);
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .header p { margin-top:6px; font-size:0.88rem; color:#888; }
+
+    .card {
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 28px 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(240,98,146,0.12), 0 1px 4px rgba(0,0,0,0.06);
+      border: 2px solid rgba(255,255,255,0.9);
+    }
+    .card-title {
+      font-size:1.05rem; font-weight:800; color:#e91e8c;
+      margin-bottom:18px; display:flex; align-items:center; gap:8px;
+    }
+    .card-title .icon { font-size:1.3rem; }
+
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media (max-width:520px) {
+      .form-grid { grid-template-columns:1fr; }
+      .header h1 { font-size:1.0rem; }
+      .header-banner { padding: 10px 18px; }
+    }
+
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group.full-width { grid-column:1 / -1; }
+
+    label { font-size:0.85rem; font-weight:700; color:#c2185b; }
+    .sub  { font-weight:400; color:#aaa; font-size:0.78rem; }
+
+    input[type="date"] {
+      padding:10px 14px; border:2px solid #f8bbd0; border-radius:14px;
+      font-size:0.95rem; font-family:inherit; color:#444;
+      background:#fff0f5; outline:none;
+      transition:border-color 0.2s, box-shadow 0.2s; width:100%;
+    }
+    input[type="date"]:focus {
+      border-color:#e91e8c;
+      box-shadow:0 0 0 3px rgba(233,30,140,0.12);
+      background:#fff;
+    }
+
+    .toggle-row {
+      display:flex; align-items:center; gap:12px;
+      background:#fff0f5; border-radius:14px;
+      padding:12px 16px; border:2px solid #f8bbd0;
+    }
+    .toggle-row label { cursor:pointer; font-size:0.9rem; color:#555; flex:1; }
+    .toggle { position:relative; width:48px; height:26px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; }
+    .toggle-slider {
+      position:absolute; cursor:pointer; inset:0;
+      background:#ddd; border-radius:26px; transition:0.3s;
+    }
+    .toggle-slider:before {
+      content:''; position:absolute;
+      width:20px; height:20px; left:3px; bottom:3px;
+      background:white; border-radius:50%; transition:0.3s;
+      box-shadow:0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background:#e91e8c; }
+    .toggle input:checked + .toggle-slider:before { transform:translateX(22px); }
+
+    .btn-calc {
+      width:100%; padding:16px; margin-top:8px;
+      background:linear-gradient(135deg,#e91e8c,#f06292);
+      color:white; font-size:1.05rem; font-weight:800; font-family:inherit;
+      border:none; border-radius:18px; cursor:pointer;
+      transition:transform 0.15s, box-shadow 0.15s;
+      box-shadow:0 4px 14px rgba(233,30,140,0.35);
+      letter-spacing:0.05em;
+    }
+    .btn-calc:hover  { transform:translateY(-2px); box-shadow:0 6px 20px rgba(233,30,140,0.45); }
+    .btn-calc:active { transform:translateY(0); }
+
+    .error-msg {
+      display:none; background:#fff3e0; border:2px solid #ffb74d;
+      color:#e65100; border-radius:14px; padding:12px 16px;
+      font-size:0.88rem; font-weight:700; margin-bottom:16px;
+    }
+
+    #result-area { display:none; }
+
+    .timeline { position:relative; padding-left:28px; }
+    .timeline::before {
+      content:''; position:absolute; left:10px; top:8px; bottom:8px; width:3px;
+      background:linear-gradient(to bottom,#f48fb1,#ce93d8,#90caf9,#80cbc4);
+      border-radius:3px;
+    }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-item:last-child { margin-bottom:0; }
+    .tl-dot {
+      position:absolute; left:-23px; top:12px;
+      width:16px; height:16px; border-radius:50%;
+      border:3px solid white;
+      box-shadow:0 0 0 2px currentColor, 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .tl-box { border-radius:18px; padding:14px 18px; border:2px solid transparent; }
+    .tl-box.prenatal  { background:#fce4ec; border-color:#f48fb1; }
+    .tl-box.postnatal { background:#f3e5f5; border-color:#ce93d8; }
+    .tl-box.parental  { background:#e8f5e9; border-color:#81c784; }
+    .tl-box.parental2 { background:#e3f2fd; border-color:#64b5f6; }
+    .tl-box.parental3 { background:#e0f2f1; border-color:#4db6ac; }
+    .tl-dot.prenatal  { color:#e91e63; }
+    .tl-dot.postnatal { color:#9c27b0; }
+    .tl-dot.parental  { color:#4caf50; }
+    .tl-dot.parental2 { color:#2196f3; }
+    .tl-dot.parental3 { color:#009688; }
+    .tl-label { font-size:0.8rem; font-weight:800; letter-spacing:0.04em; margin-bottom:4px; }
+    .tl-label.prenatal  { color:#c2185b; }
+    .tl-label.postnatal { color:#7b1fa2; }
+    .tl-label.parental  { color:#2e7d32; }
+    .tl-label.parental2 { color:#1565c0; }
+    .tl-label.parental3 { color:#00695c; }
+    .tl-dates { font-size:1.0rem; font-weight:700; color:#333; line-height:1.5; }
+    .tl-days {
+      display:inline-block; margin-top:4px; font-size:0.78rem; font-weight:700;
+      padding:2px 10px; border-radius:20px;
+      background:rgba(255,255,255,0.7); color:#666;
+    }
+
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:520px) { .summary-grid { grid-template-columns:1fr; } }
+    .summary-item {
+      background:linear-gradient(135deg,#fff0f5,#fff);
+      border-radius:16px; padding:14px 16px;
+      border:2px solid #fce4ec; text-align:center;
+    }
+    .summary-item .s-label { font-size:0.75rem; font-weight:700; color:#aaa; margin-bottom:4px; }
+    .summary-item .s-value { font-size:1.55rem; font-weight:800; color:#e91e8c; line-height:1; }
+    .summary-item .s-unit  { font-size:0.8rem; color:#bbb; margin-left:2px; }
+
+    .note-box {
+      background:#fffde7; border:2px solid #fff176;
+      border-radius:14px; padding:14px 16px;
+      font-size:0.8rem; color:#795548; line-height:1.7;
+    }
+    .note-box strong { color:#e65100; display:block; margin-bottom:4px; font-size:0.85rem; }
+
+    .footer { text-align:center; font-size:0.75rem; color:#bbb; margin-top:10px; padding-bottom:20px; }
+    .stars  { display:inline-block; font-size:1.1rem; margin:0 4px; }
+
+    .fade-in { animation:fadeInUp 0.5s ease forwards; }
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="floating-decor">
+  <div class="deco-item">🌸</div>
+  <div class="deco-item">⭐</div>
+  <div class="deco-item">🍼</div>
+  <div class="deco-item">💗</div>
+  <div class="deco-item">🌷</div>
+  <div class="deco-item">✨</div>
+  <div class="deco-item">🎀</div>
+  <div class="deco-item">🌼</div>
+  <div class="deco-item">💫</div>
+  <div class="deco-item">🍀</div>
+</div>
+
+<div class="wrapper">
+  <div class="header">
+
+    <!-- ===== イラスト削除 ===== -->
+    <div class="baby-character" style="display:none">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="wb" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.030 0.024" numOctaves="4" seed="7" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <filter id="sf" x="-8%" y="-8%" width="116%" height="116%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.022 0.018" numOctaves="3" seed="3" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="1.0" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+        </defs>
+
+        <!-- ===== 星・ハート 飾り ===== -->
+        <!-- ハート 左上 -->
+        <path d="M 24 28 C 24 22, 17 18, 13 23 C 9 28, 10 36, 18 42 L 24 47 L 30 42 C 38 36, 39 28, 35 23 C 31 18, 24 22, 24 28 Z"
+              fill="#f48fb1" filter="url(#wb)"/>
+        <!-- 星 右上 -->
+        <polygon points="170,14 173,22 182,22 175,27 178,36 170,31 162,36 165,27 158,22 167,22"
+                 fill="#fdd835" filter="url(#wb)"/>
+        <!-- 小さい星 左 -->
+        <polygon points="18,75 20,81 26,81 21,85 23,91 18,87 13,91 15,85 10,81 16,81"
+                 fill="#80cbc4" filter="url(#wb)"/>
+        <!-- 小さいハート 右 -->
+        <path d="M 183 68 C 183 64, 178 62, 176 65 C 174 68, 175 73, 180 77 L 183 80 L 186 77 C 191 73, 192 68, 190 65 C 188 62, 183 64, 183 68 Z"
+              fill="#f06292" filter="url(#wb)"/>
+        <!-- 音符 -->
+        <text x="148" y="50" font-family="Arial,sans-serif" font-size="18"
+              fill="#ce93d8" filter="url(#wb)">&#9834;</text>
+        <!-- 小花 左下 -->
+        <g transform="translate(22,150)" filter="url(#wb)">
+          <circle cx="0" cy="-8" r="5" fill="#ffccbc"/>
+          <circle cx="7" cy="-4" r="5" fill="#ffccbc"/>
+          <circle cx="7" cy=" 4" r="5" fill="#ffccbc"/>
+          <circle cx="0" cy=" 8" r="5" fill="#ffccbc"/>
+          <circle cx="-7" cy=" 4" r="5" fill="#ffccbc"/>
+          <circle cx="-7" cy="-4" r="5" fill="#ffccbc"/>
+          <circle cx="0"  cy=" 0" r="5" fill="#ff8a65"/>
+          <circle cx="0"  cy=" 0" r="2.5" fill="#fff9c4"/>
+        </g>
+        <!-- 小花 右下 -->
+        <g transform="translate(178,150)" filter="url(#wb)">
+          <circle cx="0" cy="-7" r="4.5" fill="#f8bbd0"/>
+          <circle cx="6" cy="-3" r="4.5" fill="#f8bbd0"/>
+          <circle cx="6" cy=" 3" r="4.5" fill="#f8bbd0"/>
+          <circle cx="0" cy=" 7" r="4.5" fill="#f8bbd0"/>
+          <circle cx="-6" cy=" 3" r="4.5" fill="#f8bbd0"/>
+          <circle cx="-6" cy="-3" r="4.5" fill="#f8bbd0"/>
+          <circle cx="0"  cy=" 0" r="4.5" fill="#f48fb1"/>
+          <circle cx="0"  cy=" 0" r="2.2" fill="#fff9c4"/>
+        </g>
+
+        <!-- ===== 子熊（おすわりポーズ） ===== -->
+        <!-- 足（前） -->
+        <ellipse cx="72" cy="177" rx="22" ry="13" fill="#c8925a" stroke="#a07040" stroke-width="1" filter="url(#sf)"/>
+        <ellipse cx="128" cy="177" rx="22" ry="13" fill="#c8925a" stroke="#a07040" stroke-width="1" filter="url(#sf)"/>
+        <ellipse cx="72" cy="179" rx="14" ry="8" fill="#e8a878" opacity="0.65"/>
+        <ellipse cx="128" cy="179" rx="14" ry="8" fill="#e8a878" opacity="0.65"/>
+
+        <!-- 体 -->
+        <ellipse cx="100" cy="152" rx="36" ry="30" fill="#c8925a" stroke="#a07040" stroke-width="1.2" filter="url(#sf)"/>
+        <!-- お腹 -->
+        <ellipse cx="100" cy="154" rx="22" ry="20" fill="#e8c49a" filter="url(#sf)"/>
+
+        <!-- 腕（左・右） -->
+        <ellipse cx="62" cy="148" rx="12" ry="20"
+                 fill="#c8925a" stroke="#a07040" stroke-width="1"
+                 transform="rotate(15 62 148)" filter="url(#sf)"/>
+        <circle cx="52" cy="162" r="12" fill="#c8925a" stroke="#a07040" stroke-width="1" filter="url(#sf)"/>
+        <ellipse cx="56" cy="163" rx="8" ry="5" fill="#e8a878" opacity="0.65"/>
+
+        <ellipse cx="138" cy="148" rx="12" ry="20"
+                 fill="#c8925a" stroke="#a07040" stroke-width="1"
+                 transform="rotate(-15 138 148)" filter="url(#sf)"/>
+        <circle cx="148" cy="162" r="12" fill="#c8925a" stroke="#a07040" stroke-width="1" filter="url(#sf)"/>
+        <ellipse cx="144" cy="163" rx="8" ry="5" fill="#e8a878" opacity="0.65"/>
+
+        <!-- 耳 -->
+        <circle cx="68"  cy="68" r="20" fill="#c8925a" stroke="#a07040" stroke-width="1.2" filter="url(#sf)"/>
+        <circle cx="68"  cy="68" r="12" fill="#e8a878" filter="url(#sf)"/>
+        <circle cx="132" cy="68" r="20" fill="#c8925a" stroke="#a07040" stroke-width="1.2" filter="url(#sf)"/>
+        <circle cx="132" cy="68" r="12" fill="#e8a878" filter="url(#sf)"/>
+
+        <!-- 頭 -->
+        <circle cx="100" cy="100" r="44" fill="#c8925a" stroke="#a07040" stroke-width="1.5" filter="url(#sf)"/>
+
+        <!-- マズル -->
+        <ellipse cx="100" cy="116" rx="26" ry="18" fill="#e8c49a" filter="url(#sf)"/>
+
+        <!-- 鼻 -->
+        <path d="M 91 109 Q 100 103 109 109 Q 105 116 100 116 Q 95 116 91 109 Z"
+              fill="#3e2010" filter="url(#wb)"/>
+
+        <!-- 目 -->
+        <circle cx="83"  cy="93" r="8" fill="#1a1a1a" filter="url(#sf)"/>
+        <circle cx="85"  cy="90" r="3" fill="white"/>
+        <circle cx="117" cy="93" r="8" fill="#1a1a1a" filter="url(#sf)"/>
+        <circle cx="119" cy="90" r="3" fill="white"/>
+
+        <!-- まつ毛 -->
+        <path d="M 75 86 L 72 81" stroke="#3e2010" stroke-width="1.5" stroke-linecap="round" filter="url(#wb)"/>
+        <path d="M 81 83 L 80 78" stroke="#3e2010" stroke-width="1.5" stroke-linecap="round" filter="url(#wb)"/>
+        <path d="M 119 83 L 120 78" stroke="#3e2010" stroke-width="1.5" stroke-linecap="round" filter="url(#wb)"/>
+        <path d="M 125 86 L 128 81" stroke="#3e2010" stroke-width="1.5" stroke-linecap="round" filter="url(#wb)"/>
+
+        <!-- ほっぺ -->
+        <ellipse cx="75"  cy="112" rx="12" ry="8" fill="#f48fb1" opacity="0.50" filter="url(#sf)"/>
+        <ellipse cx="125" cy="112" rx="12" ry="8" fill="#f48fb1" opacity="0.50" filter="url(#sf)"/>
+
+        <!-- 口 -->
+        <path d="M 91 123 Q 100 131 109 123"
+              stroke="#3e2010" stroke-width="2.2" fill="none" stroke-linecap="round" filter="url(#wb)"/>
+
+        <!-- リボン（頭の上） -->
+        <path d="M 88 60 C 80 52, 72 56, 78 62 C 84 68, 92 64, 100 60 C 108 56, 116 68, 122 62 C 128 56, 120 52, 112 60"
+              fill="#f48fb1" stroke="#e91e63" stroke-width="0.8" filter="url(#wb)"/>
+        <circle cx="100" cy="60" r="6" fill="#e91e63" filter="url(#sf)"/>
+
+      </svg>
+    </div>
+
+    <div class="header-banner">
+      <span class="banner-emoji">🌸</span>
+      <h1>産前産後・育児休業 期間かんたん計算</h1>
+      <span class="banner-emoji">🌸</span>
+    </div>
+    <p>出産予定日を入力するだけで、各休業期間をまとめて計算します</p>
+  </div>
+
+  <!-- 入力カード -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📅</span> 出産情報を入力してください</div>
+
+    <div id="error-msg" class="error-msg">⚠️ 出産予定日を入力してください。</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>出産予定日 <span style="color:#e91e8c">*必須</span></label>
+        <input type="date" id="due-date" />
+      </div>
+      <div class="form-group">
+        <label>実際の出産日</label>
+        <input type="date" id="birth-date" />
+        <span class="sub">未入力の場合は予定日を使用</span>
+      </div>
+      <div class="form-group full-width">
+        <div class="toggle-row">
+          <label for="multiple-toggle">
+            👶👶 多胎妊娠（双子・三つ子など）<br>
+            <span style="font-size:0.78rem;color:#aaa;">産前休業が14週間前（98日前）になります</span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="multiple-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">🍼 計算する ✨</button>
+  </div>
+
+  <!-- 結果エリア -->
+  <div id="result-area">
+
+    <div class="card fade-in" id="summary-card">
+      <div class="card-title"><span class="icon">💡</span> サマリー</div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="s-label">産前休業</div>
+          <div class="s-value" id="sum-prenatal">-</div>
+          <span class="s-unit">日間</span>
+        </div>
+        <div class="summary-item">
+          <div class="s-label">産後休業</div>
+          <div class="s-value" id="sum-postnatal">56</div>
+          <span class="s-unit">日間</span>
+        </div>
+        <div class="summary-item" style="grid-column:1 / -1;">
+          <div class="s-label">合計（産前＋産後＋育児休業 原則）</div>
+          <div class="s-value" id="sum-total">-</div>
+          <span class="s-unit">日間</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title"><span class="icon">🗓️</span> 各期間の詳細</div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot prenatal"></div>
+          <div class="tl-box prenatal">
+            <div class="tl-label prenatal">🌸 産前休業</div>
+            <div class="tl-dates" id="dates-prenatal">-</div>
+            <span class="tl-days" id="days-prenatal">-</span>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot postnatal"></div>
+          <div class="tl-box postnatal">
+            <div class="tl-label postnatal">💜 産後休業</div>
+            <div class="tl-dates" id="dates-postnatal">-</div>
+            <span class="tl-days" id="days-postnatal">56日間</span>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot parental"></div>
+          <div class="tl-box parental">
+            <div class="tl-label parental">💚 育児休業（原則）〜 1歳まで</div>
+            <div class="tl-dates" id="dates-parental">-</div>
+            <span class="tl-days" id="days-parental">-</span>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot parental2"></div>
+          <div class="tl-box parental2">
+            <div class="tl-label parental2">💙 育児休業（延長①）〜 1歳6ヶ月まで</div>
+            <div class="tl-dates" id="dates-parental2">-</div>
+            <span class="tl-days" id="days-parental2">-</span>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot parental3"></div>
+          <div class="tl-box parental3">
+            <div class="tl-label parental3">🩵 育児休業（延長②）〜 2歳まで</div>
+            <div class="tl-dates" id="dates-parental3">-</div>
+            <span class="tl-days" id="days-parental3">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title"><span class="icon">📋</span> ご注意</div>
+      <div class="note-box">
+        <strong>⚠️ この計算について</strong>
+        ・産前休業（労基法第65条）：出産予定日の6週間前（多胎14週間前）から出産日まで<br>
+        ・産後休業（労基法第65条）：出産日を含む56日間（出産日 = 1日目）<br>
+        <span style="white-space:nowrap">・育児休業は子が1歳の誕生日の前日まで（原則）</span><br>
+        ・保育所未入所等の場合は1歳6ヶ月・2歳まで延長可能<br>
+        ・実際の出産日が未入力の場合は出産予定日を使って産後・育児休業を計算しています<br>
+        ・この計算はあくまで目安です。詳細は会社の人事部や社会保険労務士にご確認ください
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="stars">✨</span> 産前産後・育児休業期間計算アプリ <span class="stars">✨</span>
+  </div>
+</div>
+
+<script>
+  function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+  function addYears(date, years) {
+    const d = new Date(date);
+    const targetYear = d.getFullYear() + years;
+    const month = d.getMonth(), day = d.getDate();
+    if (month === 1 && day === 29) {
+      d.setFullYear(targetYear, 1, new Date(targetYear, 2, 0).getDate());
+    } else {
+      d.setFullYear(targetYear);
+    }
+    return d;
+  }
+  function addMonths(date, months) {
+    const d = new Date(date);
+    const targetMonth = d.getMonth() + months;
+    const targetYear  = d.getFullYear() + Math.floor(targetMonth / 12);
+    const nm = ((targetMonth % 12) + 12) % 12;
+    const daysInMonth = new Date(targetYear, nm + 1, 0).getDate();
+    d.setFullYear(targetYear, nm, Math.min(d.getDate(), daysInMonth));
+    return d;
+  }
+  function diffDays(a, b) {
+    return Math.round((b - a) / (1000 * 60 * 60 * 24));
+  }
+  function formatDate(date) {
+    const w = ['日','月','火','水','木','金','土'][date.getDay()];
+    return `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日（${w}）`;
+  }
+  function parseLocalDate(str) {
+    const [y,m,d] = str.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+
+  function calculate() {
+    const dueDateStr   = document.getElementById('due-date').value;
+    const birthDateStr = document.getElementById('birth-date').value;
+    const isMultiple   = document.getElementById('multiple-toggle').checked;
+    const errorEl      = document.getElementById('error-msg');
+
+    if (!dueDateStr) { errorEl.style.display = 'block'; return; }
+    errorEl.style.display = 'none';
+
+    const dueDate   = parseLocalDate(dueDateStr);
+    const birthDate = birthDateStr ? parseLocalDate(birthDateStr) : dueDate;
+
+    const prenatalDays  = isMultiple ? 98 : 42;
+    const prenatalStart = addDays(dueDate, -prenatalDays);
+    const prenatalEnd   = birthDate;
+    const prenatalCount = diffDays(prenatalStart, prenatalEnd) + 1;
+
+    const postnatalStart = birthDate;
+    const postnatalEnd   = addDays(birthDate, 55);
+    const postnatalCount = 56;
+
+    const parentalStart = addDays(postnatalEnd, 1);
+    const parentalEnd   = addDays(addYears(birthDate, 1), -1);
+    const parentalCount = diffDays(parentalStart, parentalEnd) + 1;
+
+    const child18mBday   = addMonths(birthDate, 18);
+    const parental2Start = addDays(parentalEnd, 1);
+    const parental2End   = addDays(child18mBday, -1);
+    const parental2Count = diffDays(parental2Start, parental2End) + 1;
+
+    const parental3Start = addDays(parental2End, 1);
+    const parental3End   = addDays(addYears(birthDate, 2), -1);
+    const parental3Count = diffDays(parental3Start, parental3End) + 1;
+
+    document.getElementById('sum-prenatal').textContent  = prenatalCount;
+    document.getElementById('sum-postnatal').textContent = postnatalCount;
+    document.getElementById('sum-total').textContent     = prenatalCount + postnatalCount + parentalCount;
+
+    set('dates-prenatal',  `${formatDate(prenatalStart)}<br>〜 ${formatDate(prenatalEnd)}`);
+    set('days-prenatal',   `${prenatalCount}日間（${isMultiple ? '14' : '6'}週間）`);
+    set('dates-postnatal', `${formatDate(postnatalStart)}<br>〜 ${formatDate(postnatalEnd)}`);
+    set('dates-parental',  `${formatDate(parentalStart)}<br>〜 ${formatDate(parentalEnd)}`);
+    set('days-parental',   `${parentalCount}日間（約${Math.floor(parentalCount/30)}ヶ月${parentalCount%30}日）`);
+    set('dates-parental2', `${formatDate(parental2Start)}<br>〜 ${formatDate(parental2End)}`);
+    set('days-parental2',  `延長分 ${parental2Count}日間`);
+    set('dates-parental3', `${formatDate(parental3Start)}<br>〜 ${formatDate(parental3End)}`);
+    set('days-parental3',  `延長分 ${parental3Count}日間`);
+
+    const resultArea = document.getElementById('result-area');
+    resultArea.style.display = 'block';
+    resultArea.querySelectorAll('.fade-in').forEach(el => {
+      el.style.animation = 'none'; void el.offsetHeight; el.style.animation = '';
+    });
+    resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function set(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+</script>
+</body>
+</html>
